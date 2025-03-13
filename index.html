@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4a90e2">
+    <title>CurrentCircle</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="apple-touch-icon" href="images/icon-192x192.png">
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #e2e8f0;
+            --text-color: #2d3748;
+            --background-color: #f8fafc;
+            --error-color: #e53e3e;
+            --success-color: #38a169;
+            --border-radius: 8px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding-bottom: 70px; /* Space for bottom nav */
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 1rem;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .profile-setup {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-group label {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .input-group input, .input-group textarea {
+            padding: 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+        }
+        
+        .input-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3a7bc8;
+        }
+        
+        .profile-image-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .profile-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-image-placeholder {
+            font-size: 3rem;
+            color: #a0aec0;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 0.75rem 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #718096;
+            font-size: 0.75rem;
+            text-decoration: none;
+        }
+        
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+        
+        .nav-item i {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .screen {
+            display: none;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        /* Connection visualization */
+        #connection-graph {
+            width: 100%;
+            height: 60vh;
+            margin-top: 1rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        /* Connection list styles */
+        .connection-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        
+        .connection-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .connection-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            margin-right: 1rem;
+            overflow: hidden;
+        }
+        
+        .connection-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .connection-info {
+            flex: 1;
+        }
+        
+        .connection-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .connection-date {
+            font-size: 0.85rem;
+            color: #718096;
+        }
+        
+        .expiring-soon {
+            color: var(--error-color);
+        }
+        
+        /* QR Code Styles */
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2rem;
+            gap: 1rem;
+        }
+        
+        #qrcode {
+            width: 250px;
+            height: 250px;
+            background-color: white;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .qr-instructions {
+            text-align: center;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        /* QR Scanner Styles */
+        .scanner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2rem;
+            gap: 1rem;
+        }
+        
+        #scanner-view {
+            width: 300px;
+            height: 300px;
+            position: relative;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        #scanner {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid var(--primary-color);
+            border-radius: var(--border-radius);
+            z-index: 10;
+        }
+        
+        .scanner-instructions {
+            text-align: center;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        /* Messages styles */
+        .messages-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .message {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .message-sender {
+            font-weight: 600;
+        }
+        
+        .message-date {
+            font-size: 0.85rem;
+            color: #718096;
+        }
+        
+        .message-content {
+            line-height: 1.5;
+        }
+        
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid var(--secondary-color);
+            margin-top: 1rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .compose-message {
+            position: fixed;
+            bottom: 70px;
+            right: 1rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .relay-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--error-color);
+            color: white;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #718096;
+        }
+        
+        .status-message {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+        
+        .status-message.error {
+            background-color: #fed7d7;
+            color: var(--error-color);
+        }
+        
+        .status-message.success {
+            background-color: #c6f6d5;
+            color: var(--success-color);
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="screen">
+            <header>
+                <h1>Welcome to CurrentCircle</h1>
+            </header>
+            <div class="container">
+                <p style="margin: 1rem 0;">Let's set up your profile to get started.</p>
+                <div class="profile-setup">
+                    <div class="profile-image-container">
+                        <div class="profile-image" id="profile-image-display">
+                            <div class="profile-image-placeholder">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        <button id="select-image-btn">Choose Profile Picture</button>
+                        <input type="file" id="profile-image-input" accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="first-name">First Name</label>
+                        <input type="text" id="first-name" placeholder="Enter your first name">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="last-name">Last Name</label>
+                        <input type="text" id="last-name" placeholder="Enter your last name">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="nickname">Nickname</label>
+                        <input type="text" id="nickname" placeholder="Enter your nickname">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="bio">Bio</label>
+                        <textarea id="bio" placeholder="Write a short bio about yourself"></textarea>
+                    </div>
+                    
+                    <button id="create-profile-btn">Create Profile</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Home Screen -->
+        <div id="home-screen" class="screen">
+            <header>
+                <h1>CurrentCircle</h1>
+            </header>
+            <div class="container">
+                <div id="connection-graph"></div>
+                <div class="connection-list" id="connection-list">
+                    <!-- Connections will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Connect Screen -->
+        <div id="connect-screen" class="screen">
+            <header>
+                <h1>Connect</h1>
+            </header>
+            <div class="container">
+                <div class="tab-container">
+                    <div class="tab active" data-tab="show-qr">Show QR</div>
+                    <div class="tab" data-tab="scan-qr">Scan QR</div>
+                </div>
+                
+                <div id="show-qr-tab" class="tab-content active">
+                    <div class="qr-container">
+                        <div id="qrcode"></div>
+                        <p class="qr-instructions">Show this QR code to someone you want to connect with. They'll scan it with their CurrentCircle app.</p>
+                    </div>
+                </div>
+                
+                <div id="scan-qr-tab" class="tab-content">
+                    <div class="scanner-container">
+                        <div id="scanner-view">
+                            <video id="scanner" autoplay playsinline></video>
+                            <div class="scanner-overlay"></div>
+                        </div>
+                        <p class="scanner-instructions">Point your camera at someone's CurrentCircle QR code to connect.</p>
+                        <button id="start-scan-btn">Start Scanning</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Messages Screen -->
+        <div id="messages-screen" class="screen">
+            <header>
+                <h1>Messages</h1>
+            </header>
+            <div class="container">
+                <div class="tab-container">
+                    <div class="tab active" data-tab="inbox">Inbox</div>
+                    <div class="tab" data-tab="outbox">Outbox</div>
+                    <div class="tab" data-tab="relay">Relay <span id="relay-count"></span></div>
+                </div>
+                
+                <div id="inbox-tab" class="tab-content active">
+                    <div class="messages-container" id="inbox-messages">
+                        <!-- Inbox messages will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <div id="outbox-tab" class="tab-content">
+                    <div class="messages-container" id="outbox-messages">
+                        <!-- Outbox messages will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <div id="relay-tab" class="tab-content">
+                    <div class="messages-container" id="relay-messages">
+                        <!-- Relay messages will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <button class="compose-message" id="compose-btn">
+                    <i class="fas fa-pen"></i>
+                    <div class="relay-badge" id="relay-badge">0</div>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Profile Screen -->
+        <div id="profile-screen" class="screen">
+            <header>
+                <h1>Profile</h1>
+            </header>
+            <div class="container">
+                <div class="profile-image-container">
+                    <div class="profile-image" id="current-profile-image">
+                        <div class="profile-image-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <h2 id="profile-name"></h2>
+                    <p id="profile-nickname"></p>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h3>Bio</h3>
+                    <p id="profile-bio" style="margin-top: 0.5rem;"></p>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h3>Identity Management</h3>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                        <button id="export-identity-btn">Export Identity</button>
+                        <button id="import-identity-btn">Import Identity</button>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h3>Edit Profile</h3>
+                    <button id="edit-profile-btn" style="margin-top: 0.5rem;">Edit Profile</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" data-screen="home-screen">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" data-screen="connect-screen">
+                <i class="fas fa-qrcode"></i>
+                <span>Connect</span>
+            </a>
+            <a href="#" class="nav-item" data-screen="messages-screen">
+                <i class="fas fa-envelope"></i>
+                <span>Messages</span>
+            </a>
+            <a href="#" class="nav-item" data-screen="profile-screen">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+        
+        <!-- Compose Message Modal -->
+        <div class="modal" id="compose-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Compose Message</h2>
+                    <button class="modal-close" id="close-compose-modal">&times;</button>
+                </div>
+                <div class="input-group">
+                    <label for="message-recipient">Recipient</label>
+                    <select id="message-recipient">
+                        <option value="">Select recipient...</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-top: 1rem;">
+                    <label for="message-content">Message</label>
+                    <textarea id="message-content" placeholder="Type your message here" maxlength="1000"></textarea>
+                    <small id="character-count" style="text-align: right; margin-top: 0.25rem;">0/1000</small>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="is-relay">
+                        Send via relay if needed
+                    </label>
+                </div>
+                <button id="send-message-btn" style="margin-top: 1.5rem; width: 100%;">Send Message</button>
+            </div>
+        </div>
+        
+        <!-- View Connection Modal -->
+        <div class="modal" id="connection-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Connection Details</h2>
+                    <button class="modal-close" id="close-connection-modal">&times;</button>
+                </div>
+                <div class="profile-image-container" style="margin-bottom: 1.5rem;">
+                    <div class="profile-image" id="connection-profile-image">
+                        <div class="profile-image-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <h2 id="connection-name"></h2>
+                    <p id="connection-nickname"></p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>Bio</h3>
+                    <p id="connection-bio" style="margin-top: 0.5rem;"></p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>Connection History</h3>
+                    <div style="margin-top: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>First Connected:</span>
+                            <span id="connection-first-date"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                            <span>Last Connected:</span>
+                            <span id="connection-last-date"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                            <span>Expires On:</span>
+                            <span id="connection-expiry-date"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem;">
+                    <button id="message-connection-btn" style="flex: 1;">Message</button>
+                    <button id="remove-connection-btn" style="flex: 1; background-color: var(--error-color);">Remove</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Connection Confirmation Modal -->
+        <div class="modal" id="confirmation-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Confirm Connection</h2>
+                    <button class="modal-close" id="close-confirmation-modal">&times;</button>
+                </div>
+                <div class="profile-image-container" style="margin-bottom: 1.5rem;">
+                    <div class="profile-image" id="confirm-profile-image">
+                        <div class="profile-image-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <h2 id="confirm-name"></h2>
+                    <p id="confirm-nickname"></p>
+                </div>
+                
+                <p style="text-align: center; margin-bottom: 1.5rem;">
+                    Is this the name you know this person by?
+                </p>
+                
+                <div style="display: flex; gap: 1rem;">
+                    <button id="confirm-yes-btn" style="flex: 1; background-color: var(--success-color);">Yes, Connect</button>
+                    <button id="confirm-no-btn" style="flex: 1; background-color: var(--error-color);">No, Cancel</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Identity Export Modal -->
+        <div class="modal" id="export-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Export Identity</h2>
+                    <button class="modal-close" id="close-export-modal">&times;</button>
+                </div>
+                <p style="margin-bottom: 1rem;">
+                    This is your identity key. Save it securely to restore your profile if you lose your device.
+                </p>
+                <div style="background-color: var(--secondary-color); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; word-break: break-all; font-family: monospace;" id="identity-key">
+                    <!-- Identity key will be displayed here -->
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button id="copy-key-btn" style="flex: 1;">Copy to Clipboard</button>
+                    <button id="download-key-btn" style="flex: 1;">Download Key File</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Identity Import Modal -->
+        <div class="modal" id="import-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Import Identity</h2>
+                    <button class="modal-close" id="close-import-modal">&times;</button>
+                </div>
+                <p style="margin-bottom: 1rem;">
+                    Paste your identity key or upload a key file to restore your profile.
+                </p>
+                <div class="input-group">
+                    <label for="import-key">Identity Key</label>
+                    <textarea id="import-key" placeholder="Paste your identity key here" style="font-family: monospace;"></textarea>
+                </div>
+                <p style="text-align: center; margin: 1rem 0;">OR</p>
+                <div style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
+                    <button id="upload-key-btn">Upload Key File</button>
+                    <input type="file" id="key-file-input" accept=".json,.txt" style="display: none;">
+                </div>
+                <div class="status-message error hidden" id="import-error">
+                    <!-- Error message will be displayed here -->
+                </div>
+                <button id="import-key-btn" style="width: 100%;">Import Identity</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.3.1/jsQR.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/crypto.js"></script>
+    <script src="js/webrtc.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/connect.js"></script>
+    <script src="js/messages.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
